@@ -1,0 +1,21 @@
+{
+	"name": "fuel",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"axios": "^0.26.0",
+		"express": "^4.17.3",
+		"xml2js": "^0.4.23"
+	},
+	"devDependencies": {
+		"@types/express": "^4.17.13",
+		"@types/xml2js": "^0.4.9"
+	}
+}
