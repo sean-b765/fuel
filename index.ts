@@ -20,13 +20,12 @@ async function getFuelData() {
 function degreesToRad(deg) {
 	return deg * (Math.PI / 180)
 }
-const key = 'AIzaSyDkXDRSjlwwChYJNL-rsfnwmwS_7ch1gmw'
 
 async function getJourney(origin, destination) {
 	return new Promise((resolve, reject) => {
 		axios
 			.get(
-				`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin}&destinations=${destination}&mode=driving&language=en-US&key=${key}`
+				`https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin}&destinations=${destination}&mode=driving&language=en-US&key=${process.env.KEY}`
 			)
 			.then((res) => {
 				resolve(res.data.rows[0].elements)
