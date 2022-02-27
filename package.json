@@ -11,7 +11,9 @@
 	"license": "ISC",
 	"dependencies": {
 		"axios": "^0.26.0",
+		"dotenv": "^16.0.0",
 		"express": "^4.17.3",
+		"express-rate-limit": "^6.3.0",
 		"xml2js": "^0.4.23"
 	},
 	"devDependencies": {
