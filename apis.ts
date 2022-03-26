@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { parseString } from 'xml2js'
-import { distanceBetweenCoords } from './helpers'
+import { distanceBetweenCoords, inverseVincentyDistance } from './helpers'
 
 export async function getFuelData(
 	lat: number,
@@ -25,12 +25,18 @@ export async function getFuelData(
 							_result[i][key] = isNaN(_value) ? value[0] : _value
 						}
 
-						// distance user's coordinates and servo coordinates
+						// Distance between user's coordinates and servo coordinates
 						const distanceBetween = distanceBetweenCoords(
 							[_result[i].latitude, _result[i].longitude],
 							[lat, lng]
 						)
 						_result[i].distanceTo = distanceBetween
+
+						// _result[i].vincenty =
+						// 	inverseVincentyDistance(
+						// 		{ lat: _result[i].latitude, lng: _result[i].longitude },
+						// 		{ lat, lng }
+						// 	) / 1000
 					}
 
 					if (radius) {
