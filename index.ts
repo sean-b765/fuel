@@ -79,6 +79,9 @@ app.get('/nearestAndCheapest/:coords', async (req, res) => {
 
 	const sorted = result.result.sort((objA, objB) => objA.price - objB.price)
 
+	if (!sorted.length)
+		return res.status(500).json({ error: 'Internal server error.' })
+
 	// get google maps journey
 	for (let i = 0; i < 5; i++) {
 		// console.log(`${lat},${lng}`, `${sorted[i].latitude},${sorted[i].longitude}`)
