@@ -69,7 +69,8 @@ app.get('/nearestAndCheapest/:coords', async (req, res) => {
 		let radius = Number(
 			req.query.radius === '0' ? '5' : req.query.radius || '5'
 		)
-		if (radius <= 0 || radius >= 100) radius = 5
+		if (radius <= 0) radius = 5
+		if (radius > 70) radius = 50
 
 		const { lat, lng, error } = parseCoords(coords)
 
@@ -96,15 +97,18 @@ app.get('/nearestAndCheapest/:coords', async (req, res) => {
 
 		// get google maps journey
 		for (let i = 0; i < 5; i++) {
-			const journey = await getJourney(
-				`${lat},${lng}`,
-				`${sorted[i].latitude},${sorted[i].longitude}`
-			)
+			try {
+				const journey = await getJourney(
+					`${lat},${lng}`,
+					`${sorted[i].latitude},${sorted[i].longitude}`
+				)
 
-			if (!journey) continue
+				if (!journey) continue
+				if (journey[0]?.status === 'ZERO_RESULTS') continue
 
-			sorted[i].distance = journey[0]?.distance?.text
-			sorted[i].duration = journey[0]?.duration?.text
+				sorted[i].distance = journey[0]?.distance?.text
+				sorted[i].duration = journey[0]?.duration?.text
+			} catch (err) {}
 		}
 
 		res
