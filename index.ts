@@ -24,84 +24,95 @@ app.use(
 app.use(express.json())
 
 app.get('/nearest/:coords', async (req, res) => {
-	const { coords } = req.params
+	try {
+		const { coords } = req.params
 
-	const { lat, lng, error } = parseCoords(coords)
+		const { lat, lng, error } = parseCoords(coords)
 
-	if (error) return res.status(400).json({ message: 'Invalid coordinates.' })
+		if (error) return res.status(400).json({ message: 'Invalid coordinates.' })
 
-	const result: { result: any[]; error?: boolean } = await getFuelData(lat, lng)
+		const result: { result: any[]; error?: boolean } = await getFuelData(
+			lat,
+			lng
+		)
 
-	if (result.error)
-		return res.status(500).json({ message: 'Internal Server Error' })
+		if (result.error)
+			return res.status(500).json({ message: 'Internal Server Error' })
 
-	const sorted = result.result.sort(
-		(objA, objB) => objA.distanceTo - objB.distanceTo
-	)
+		const sorted = result.result.sort(
+			(objA, objB) => objA.distanceTo - objB.distanceTo
+		)
 
-	const nearest = sorted[0]
-	if (!nearest) return res.status(400).json({ message: 'No results nearby' })
+		const nearest = sorted[0]
+		if (!nearest) return res.status(400).json({ message: 'No results nearby' })
 
-	// real journey time from google maps API
-	const journey = await getJourney(
-		`${nearest.latitude},${nearest.longitude}`,
-		`${lat},${lng}`
-	)
+		// real journey time from google maps API
+		const journey = await getJourney(
+			`${nearest.latitude},${nearest.longitude}`,
+			`${lat},${lng}`
+		)
 
-	if (journey[0]?.status !== 'ZERO_RESULTS') {
-		nearest.distance = journey[0].distance.text
-		nearest.duration = journey[0].duration.text
+		if (journey[0]?.status !== 'ZERO_RESULTS') {
+			nearest.distance = journey[0].distance.text
+			nearest.duration = journey[0].duration.text
+		}
+
+		return res.json({ nearest })
+	} catch (err) {
+		return res.sendStatus(500)
 	}
-
-	return res.json({ nearest })
 })
 
 app.get('/nearestAndCheapest/:coords', async (req, res) => {
-	const { coords } = req.params
-	let radius = Number(req.query.radius === '0' ? '5' : req.query.radius || '5')
-	if (radius <= 0 || radius >= 100) radius = 5
+	try {
+		const { coords } = req.params
+		let radius = Number(
+			req.query.radius === '0' ? '5' : req.query.radius || '5'
+		)
+		if (radius <= 0 || radius >= 100) radius = 5
 
-	const { lat, lng, error } = parseCoords(coords)
+		const { lat, lng, error } = parseCoords(coords)
 
-	if (error) return res.status(400).json({ message: 'Invalid coordinates.' })
+		if (error) return res.status(400).json({ message: 'Invalid coordinates.' })
 
-	const result: { result: any[]; error?: boolean } = await getFuelData(
-		lat,
-		lng,
-		radius
-	)
-
-	if (result.error || !result)
-		return res.status(500).json({ message: 'Internal Server Error' })
-
-	if (result.result.length === 0)
-		return res.status(400).json({ message: 'No results in your search radius' })
-
-	const sorted = result.result.sort((objA, objB) => objA.price - objB.price)
-
-	if (!sorted.length)
-		return res.status(500).json({ error: 'Internal server error.' })
-
-	// get google maps journey
-	for (let i = 0; i < 5; i++) {
-		// console.log(`${lat},${lng}`, `${sorted[i].latitude},${sorted[i].longitude}`)
-
-		const journey = await getJourney(
-			`${lat},${lng}`,
-			`${sorted[i].latitude},${sorted[i].longitude}`
+		const result: { result: any[]; error?: boolean } = await getFuelData(
+			lat,
+			lng,
+			radius
 		)
 
-		console.log(journey)
+		if (result.error || !result)
+			return res.status(500).json({ message: 'Internal Server Error' })
 
-		if (!journey) continue
+		if (result.result.length === 0)
+			return res
+				.status(400)
+				.json({ message: 'No results in your search radius' })
 
-		sorted[i].distance = journey[0]?.distance?.text
-		sorted[i].duration = journey[0]?.duration?.text
+		const sorted = result.result.sort((objA, objB) => objA.price - objB.price)
+
+		if (!sorted.length)
+			return res.status(500).json({ error: 'Internal server error.' })
+
+		// get google maps journey
+		for (let i = 0; i < 5; i++) {
+			const journey = await getJourney(
+				`${lat},${lng}`,
+				`${sorted[i].latitude},${sorted[i].longitude}`
+			)
+
+			if (!journey) continue
+
+			sorted[i].distance = journey[0]?.distance?.text
+			sorted[i].duration = journey[0]?.duration?.text
+		}
+
+		res
+			.status(200)
+			.json({ result: sorted.splice(1, sorted.length), nearest: sorted[0] })
+	} catch (err) {
+		res.sendStatus(500)
 	}
-
-	res
-		.status(200)
-		.json({ result: sorted.splice(1, sorted.length), nearest: sorted[0] })
 })
 
 const PORT = process.env.PORT || 5000
