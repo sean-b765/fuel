@@ -58,7 +58,8 @@ app.get('/nearest/:coords', async (req, res) => {
 
 app.get('/nearestAndCheapest/:coords', async (req, res) => {
 	const { coords } = req.params
-	let radius = Number(req.query.radius || '50')
+	let radius = Number(req.query.radius === '0' ? '5' : req.query.radius || '5')
+	if (radius <= 0 || radius >= 100) radius = 5
 
 	const { lat, lng, error } = parseCoords(coords)
 
@@ -70,7 +71,7 @@ app.get('/nearestAndCheapest/:coords', async (req, res) => {
 		radius
 	)
 
-	if (result.error)
+	if (result.error || !result)
 		return res.status(500).json({ message: 'Internal Server Error' })
 
 	if (result.result.length === 0)
@@ -80,7 +81,7 @@ app.get('/nearestAndCheapest/:coords', async (req, res) => {
 
 	// get google maps journey
 	for (let i = 0; i < 5; i++) {
-		console.log(`${lat},${lng}`, `${sorted[i].latitude},${sorted[i].longitude}`)
+		// console.log(`${lat},${lng}`, `${sorted[i].latitude},${sorted[i].longitude}`)
 
 		const journey = await getJourney(
 			`${lat},${lng}`,
