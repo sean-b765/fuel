@@ -64,59 +64,51 @@ app.get('/nearest/:coords', async (req, res) => {
 })
 
 app.get('/nearestAndCheapest/:coords', async (req, res) => {
-	try {
-		const { coords } = req.params
-		let radius = Number(
-			req.query.radius === '0' ? '5' : req.query.radius || '5'
-		)
-		if (radius <= 0) radius = 5
-		if (radius > 70) radius = 50
+	const { coords } = req.params
+	let radius = Number(req.query.radius === '0' ? '5' : req.query.radius || '5')
+	if (radius <= 0) radius = 5
+	if (radius > 70) radius = 50
 
-		const { lat, lng, error } = parseCoords(coords)
+	const { lat, lng, error } = parseCoords(coords)
 
-		if (error) return res.status(400).json({ message: 'Invalid coordinates.' })
+	if (error) return res.status(400).json({ message: 'Invalid coordinates.' })
 
-		const result: { result: any[]; error?: boolean } = await getFuelData(
-			lat,
-			lng,
-			radius
-		)
+	const result: { result: any[]; error?: boolean } = await getFuelData(
+		lat,
+		lng,
+		radius
+	)
 
-		if (result.error || !result)
-			return res.status(500).json({ message: 'Internal Server Error' })
+	if (result.error || !result)
+		return res.status(500).json({ message: 'Internal Server Error' })
 
-		if (result.result.length === 0)
-			return res
-				.status(400)
-				.json({ message: 'No results in your search radius' })
+	if (result.result.length === 0)
+		return res.status(400).json({ message: 'No results in your search radius' })
 
-		const sorted = result.result.sort((objA, objB) => objA.price - objB.price)
+	const sorted = result.result.sort((objA, objB) => objA.price - objB.price)
 
-		if (!sorted.length)
-			return res.status(500).json({ error: 'Internal server error.' })
+	if (!sorted.length)
+		return res.status(500).json({ error: 'Internal server error.' })
 
-		// get google maps journey
-		for (let i = 0; i < 5; i++) {
-			try {
-				const journey = await getJourney(
-					`${lat},${lng}`,
-					`${sorted[i].latitude},${sorted[i].longitude}`
-				)
+	// get google maps journey
+	for (let i = 0; i < 5; i++) {
+		try {
+			const journey = await getJourney(
+				`${lat},${lng}`,
+				`${sorted[i].latitude},${sorted[i].longitude}`
+			)
 
-				if (!journey) continue
-				if (journey[0]?.status === 'ZERO_RESULTS') continue
+			if (!journey) continue
+			if (journey[0]?.status === 'ZERO_RESULTS') continue
 
-				sorted[i].distance = journey[0]?.distance?.text
-				sorted[i].duration = journey[0]?.duration?.text
-			} catch (err) {}
-		}
-
-		res
-			.status(200)
-			.json({ result: sorted.splice(1, sorted.length), nearest: sorted[0] })
-	} catch (err) {
-		res.sendStatus(500)
+			sorted[i].distance = journey[0]?.distance?.text
+			sorted[i].duration = journey[0]?.duration?.text
+		} catch (err) {}
 	}
+
+	res
+		.status(200)
+		.json({ result: sorted.splice(1, sorted.length), nearest: sorted[0] })
 })
 
 const PORT = process.env.PORT || 5000
